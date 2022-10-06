@@ -9,6 +9,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 ...
 
 # Create your views here.
@@ -22,7 +23,32 @@ def show_wishlist(request):
         'last_login': request.COOKIES['last_login'],
     }
     return render(request, "wishlist.html", context)
+
+
+@login_required(login_url='/wishlist/login/')
+def show_wishlist_ajax(request):
     
+    data_barang_wishlist = BarangWishlist.objects.all()
+    context = {
+        'list_barang': data_barang_wishlist,
+        'nama': 'Muhammad Raditya Hanif',
+        'last_login': request.COOKIES['last_login'],
+    }
+    return render(request, "wishlist_ajax.html", context)
+    
+@login_required(login_url='login/')   
+@csrf_exempt
+def create_ajax_wishlist(request):
+    if request.method == "POST":
+        nama_barang = request.POST.get('nama_barang')
+        harga_barang = request.POST.get('harga_barang')
+        deskripsi = request.POST.get('deskripsi')
+
+        BarangWishlist.objects.create(nama_barang, harga_barang, deskripsi)
+        response = HttpResponseRedirect(reverse("wishlist:show_wishlist_ajax"))
+
+        return response
+
 def xml_return(request):
     data = BarangWishlist.objects.all()
     return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
